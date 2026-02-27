@@ -54,13 +54,15 @@ jobs:
             echo "Could not determine latest version"
           fi
 
+      - name: Setup Node.js
+        if: steps.check-update.outputs.update_needed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install lzc-cli
         if: steps.check-update.outputs.update_needed == 'true'
-        run: |
-          # 下载并安装 lzc-cli
-          curl -fsSL https://github.com/linuxsuren/lzc-cli/releases/latest/download/lzc-cli-linux-amd64 -o lzc-cli
-          chmod +x lzc-cli
-          sudo mv lzc-cli /usr/local/bin/
+        run: npm install -g @lazycatcloud/lzc-cli
 
       - name: Copy image and get accelerated URL
         if: steps.check-update.outputs.update_needed == 'true'
