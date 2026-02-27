@@ -1,8 +1,18 @@
-# Moltis
+# Moltis - 懒猫微服自动构建项目
 
-**A security-first AI assistant you can trust on your machine.**
+> [!NOTE]
+> 本项目是 [Moltis](https://moltis.org) 的懒猫微服（LazyCat）自动构建项目，用于自动跟踪上游镜像更新并发布到懒猫应用商店。
 
-## Overview
+**Moltis - A security-first AI assistant you can trust on your machine.**
+
+## 关于本项目
+
+本项目会自动监测 [moltis-org/moltis](https://github.com/moltis-org/moltis) 的容器镜像更新，当有新版本发布时：
+1. 自动复制镜像到懒猫官方镜像源
+2. 更新 `lzc-manifest.yml` 配置
+3. 构建并发布到懒猫应用商店
+
+## Moltis 简介
 
 Moltis is a self-contained AI assistant written in Rust. It's designed with security as the top priority - one binary, no runtime dependencies, sandboxed execution, and comprehensive protection features.
 

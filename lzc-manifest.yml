@@ -3,7 +3,7 @@ package: com.selfstudio.moltis
 version: 0.9.10
 min_os_version: 1.3.8
 name: Moltis
-description: A security-first AI assistant - one self-contained binary, sandboxed execution, passkeys auth, MCP support, and hybrid memory
+description: (LazyCat Auto-build) A security-first AI assistant - sandboxed execution, passkeys, MCP & hybrid memory
 license: MIT
 homepage: https://moltis.org
 author: moltis-org
@@ -32,7 +32,7 @@ services:
 locales:
   en:
     name: Moltis
-    description: A security-first AI assistant - single binary, sandboxed execution, passkeys, MCP & hybrid memory
+    description: (LazyCat Auto-build) A security-first AI assistant - single binary, sandboxed execution, passkeys, MCP & hybrid memory
   zh:
     name: Moltis
-    description: 安全优先的 AI 助手 - 单一二进制文件，沙箱执行，Passkeys 认证，MCP 支持与混合记忆
+    description: （懒猫微服自动构建）安全优先的 AI 助手 - 单一二进制文件，沙箱执行，Passkeys 认证，MCP 支持与混合记忆
