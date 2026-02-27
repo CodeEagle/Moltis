@@ -144,8 +144,8 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           
-          # 发布到应用商店，带 changelog
-          lzc-cli appstore publish moltis.lpk -c "Auto update to Moltis $LATEST_VERSION"
+          # 发布到应用商店，带 changelog 和语言
+          lzc-cli appstore publish moltis.lpk -c "Auto update to Moltis $LATEST_VERSION" --clang en
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
