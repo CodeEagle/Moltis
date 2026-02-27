@@ -33,6 +33,9 @@ jobs:
             exit 1
           fi
           
+          # 去掉 v 前缀（容器镜像 tag 没有 v 前缀）
+          LATEST_VERSION=${LATEST_VERSION#v}
+          
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           echo "Latest version found: $LATEST_VERSION"
 
