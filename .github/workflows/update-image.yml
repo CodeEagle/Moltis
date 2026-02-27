@@ -68,7 +68,7 @@ jobs:
         if: steps.check-update.outputs.update_needed == 'true'
         id: copy-image
         env:
-          LZC_TOKEN: ${{ secrets.LZC_TOKEN }}
+          LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           SOURCE_IMAGE="ghcr.io/moltis-org/moltis:$LATEST_VERSION"
@@ -101,16 +101,21 @@ jobs:
           echo "Updated to version: $NEW_VERSION"
           echo "Updated image: $ACCELERATED_URL"
 
-      - name: Build and publish
+      - name: Build package
         if: steps.check-update.outputs.update_needed == 'true'
         env:
-          LZC_TOKEN: ${{ secrets.LZC_TOKEN }}
+          LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
         run: |
           # 构建新版本
-          lzc-cli appstore build
-          
-          # 发布
-          lzc-cli appstore publish
+          lzc-cli project build -o moltis.lpk
+
+      - name: Publish to appstore
+        if: steps.check-update.outputs.update_needed == 'true'
+        env:
+          LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
+        run: |
+          # 发布到应用商店
+          lzc-cli appstore publish moltis.lpk
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
