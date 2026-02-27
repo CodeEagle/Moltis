@@ -168,12 +168,13 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           
-          # 配置 SSH 使用 443 端口
+          # 配置 SSH 使用 443 端口并添加 host key
           cat >> ~/.ssh/config << 'SSHEOF'
           Host github.com
               Hostname ssh.github.com
               Port 443
               User git
+              StrictHostKeyChecking no
           SSHEOF
           
           # 修改 remote 为 SSH 并推送
