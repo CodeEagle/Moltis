@@ -151,9 +151,27 @@ jobs:
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add lzc-manifest.yml
           git commit -m "Update Moltis image to latest version"
+          
+          # 设置 SSH key
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          
+          # 配置 SSH 使用 443 端口
+          cat >> ~/.ssh/config << 'EOF'
+          Host github.com
+              Hostname ssh.github.com
+              Port 443
+              User git
+          EOF
+          
+          # 修改 remote 为 SSH 并推送
+          git remote set-url origin git@github.com:CodeEagle/Moltis.git
           git push
