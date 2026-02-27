@@ -26,11 +26,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 获取 moltis-org/moltis 容器包的最新版本
-          LATEST_VERSION=$(gh api /users/moltis-org/packages/container/moltis/versions --jq '.[0].metadata.container.tags[0]' 2>/dev/null || echo "")
+          # 过滤掉 .sig 结尾的签名文件，只获取真正的镜像 tag
+          ALL_TAGS=$(gh api /users/moltis-org/packages/container/moltis/versions --jq '.[].metadata.container.tags[]' 2>/dev/null || echo "")
+          
+          # 过滤掉 .sig 结尾的 tag，获取第一个有效的镜像 tag
+          LATEST_VERSION=$(echo "$ALL_TAGS" | grep -v '\.sig$' | head -1 || echo "")
           
           if [ -z "$LATEST_VERSION" ]; then
-            # 如果没有 tag，尝试获取版本 ID
-            LATEST_VERSION=$(gh api /users/moltis-org/packages/container/moltis/versions --jq '.[0].name' 2>/dev/null || echo "")
+            echo "No valid image tag found"
+            exit 1
           fi
           
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
