@@ -1,0 +1,38 @@
+lzc-sdk-version: '0.1'
+package: com.selfstudio.moltis
+version: 0.9.10
+min_os_version: 1.3.8
+name: Moltis
+description: A personal AI gateway written in Rust
+license: MIT
+homepage: https://github.com/moltis-org/moltis
+author: moltis-org
+application:
+  subdomain: moltis
+  public_path:
+    - /
+  upstreams:
+    - location: /
+      backend: http://moltis:13131/
+services:
+  moltis:
+    image: registry.lazycat.cloud/invokerlaw/moltis-org/moltis:f6bbd7a7261cc45f
+    environment:
+      - MOLTIS_NO_TLS=true
+      - MOLTIS_BEHIND_PROXY=true
+      - MOLTIS_BIND=0.0.0.0
+      - MOLTIS_WEBAUTHN_RP_ID=${LAZYCAT_APP_DOMAIN}
+      - MOLTIS_WEBAUTHN_ORIGIN=https://${LAZYCAT_APP_DOMAIN}
+    binds:
+      - /lzcapp/var/config:/home/moltis/.config/moltis
+      - /lzcapp/var/data:/home/moltis/.moltis
+      - /lzcapp/var/db:/home/moltis/.local/share/moltis
+    setup_script: |
+      chown -R moltis:moltis /home/moltis
+locales:
+  en:
+    name: Moltis
+    description: A Rust-native claw you can trust.
+  zh:
+    name: Moltis
+    description: 一款值得信赖的 Rust 原生 Claw
