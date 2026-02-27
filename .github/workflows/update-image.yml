@@ -3,6 +3,12 @@ name: Update Moltis Image
 on:
   # 手动触发
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force build even if no new version'
+        required: false
+        default: 'false'
+        type: boolean
   # 定时检查，每6小时一次
   schedule:
     - cron: '0 */6 * * *'
@@ -39,8 +45,14 @@ jobs:
           echo "Current image: $CURRENT_IMAGE"
           
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+          FORCE_BUILD="${{ inputs.force_build }}"
           
-          if [ -n "$LATEST_VERSION" ]; then
+          echo "Force build: $FORCE_BUILD"
+          
+          if [ "$FORCE_BUILD" = "true" ]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Force build requested"
+          elif [ -n "$LATEST_VERSION" ]; then
             # 检查当前镜像是否包含最新版本
             if [[ "$CURRENT_IMAGE" != *"$LATEST_VERSION"* ]]; then
               echo "update_needed=true" >> $GITHUB_OUTPUT
