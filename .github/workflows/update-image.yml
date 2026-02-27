@@ -142,8 +142,10 @@ jobs:
         env:
           LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
         run: |
-          # 发布到应用商店
-          lzc-cli appstore publish moltis.lpk
+          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+          
+          # 发布到应用商店，带 changelog
+          lzc-cli appstore publish moltis.lpk -c "Auto update to Moltis $LATEST_VERSION"
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
