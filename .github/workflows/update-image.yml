@@ -76,7 +76,7 @@ jobs:
         if: steps.check-update.outputs.update_needed == 'true'
         run: npm install -g @lazycatcloud/lzc-cli
 
-      - name: Copy image and get accelerated URL
+      - name: Get or copy image
         if: steps.check-update.outputs.update_needed == 'true'
         id: copy-image
         env:
@@ -85,18 +85,31 @@ jobs:
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           SOURCE_IMAGE="ghcr.io/moltis-org/moltis:$LATEST_VERSION"
           
-          echo "Copying image: $SOURCE_IMAGE"
+          echo "Looking for existing image: $SOURCE_IMAGE"
           
-          # 使用 lzc-cli 复制镜像
-          ACCELERATED_URL=$(lzc-cli appstore copy-image "$SOURCE_IMAGE" 2>&1 | grep -oP 'registry\.lazycat\.cloud/[^\s]+' || echo "")
+          # 检查 my-images 中是否已存在该镜像
+          EXISTING_IMAGE=$(lzc-cli appstore my-images 2>&1 | grep "$SOURCE_IMAGE" | grep -oP 'registry\.lazycat\.cloud/[^\s'\''"]+' | head -1 || echo "")
           
-          if [ -z "$ACCELERATED_URL" ]; then
-            echo "Failed to get accelerated URL"
-            exit 1
+          if [ -n "$EXISTING_IMAGE" ]; then
+            echo "Found existing accelerated image: $EXISTING_IMAGE"
+            echo "accelerated_url=$EXISTING_IMAGE" >> $GITHUB_OUTPUT
+          else
+            echo "No existing image found, copying: $SOURCE_IMAGE"
+            
+            # 使用 lzc-cli 复制镜像
+            COPY_OUTPUT=$(lzc-cli appstore copy-image "$SOURCE_IMAGE" 2>&1)
+            echo "$COPY_OUTPUT"
+            
+            ACCELERATED_URL=$(echo "$COPY_OUTPUT" | grep -oP 'registry\.lazycat\.cloud/[^\s]+' || echo "")
+            
+            if [ -z "$ACCELERATED_URL" ]; then
+              echo "Failed to get accelerated URL"
+              exit 1
+            fi
+            
+            echo "accelerated_url=$ACCELERATED_URL" >> $GITHUB_OUTPUT
+            echo "Accelerated URL: $ACCELERATED_URL"
           fi
-          
-          echo "accelerated_url=$ACCELERATED_URL" >> $GITHUB_OUTPUT
-          echo "Accelerated URL: $ACCELERATED_URL"
 
       - name: Update manifest
         if: steps.check-update.outputs.update_needed == 'true'
