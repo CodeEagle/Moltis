@@ -118,15 +118,15 @@ jobs:
         if: steps.check-update.outputs.update_needed == 'true'
         run: |
           ACCELERATED_URL="${{ steps.copy-image.outputs.accelerated_url }}"
+          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           
           # 更新 lzc-manifest.yml 中的镜像地址
           sed -i "s|image:.*|image: $ACCELERATED_URL|g" lzc-manifest.yml
           
-          # 更新版本号（基于日期）
-          NEW_VERSION="0.9.$(date +%Y%m%d%H%M)"
-          sed -i "s/^version:.*/version: $NEW_VERSION/g" lzc-manifest.yml
+          # 使用 release tag 的版本号
+          sed -i "s/^version:.*/version: $LATEST_VERSION/g" lzc-manifest.yml
           
-          echo "Updated to version: $NEW_VERSION"
+          echo "Updated to version: $LATEST_VERSION"
           echo "Updated image: $ACCELERATED_URL"
 
       - name: Build package
@@ -161,7 +161,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add lzc-manifest.yml
-          git commit -m "Update Moltis image to latest version"
+          git commit -m "Update Moltis to version ${{ steps.get-version.outputs.latest_version }}"
           
           # 设置 SSH key
           mkdir -p ~/.ssh
