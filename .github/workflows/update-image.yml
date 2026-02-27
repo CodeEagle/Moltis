@@ -1,0 +1,120 @@
+name: Update Moltis Image
+
+on:
+  # 手动触发
+  workflow_dispatch:
+  # 定时检查，每6小时一次
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get latest package version
+        id: get-version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取 moltis-org/moltis 容器包的最新版本
+          LATEST_VERSION=$(gh api /users/moltis-org/packages/container/moltis/versions --jq '.[0].metadata.container.tags[0]' 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_VERSION" ]; then
+            # 如果没有 tag，尝试获取版本 ID
+            LATEST_VERSION=$(gh api /users/moltis-org/packages/container/moltis/versions --jq '.[0].name' 2>/dev/null || echo "")
+          fi
+          
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest version found: $LATEST_VERSION"
+
+      - name: Check if update needed
+        id: check-update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT_IMAGE=$(grep 'image:' lzc-manifest.yml | head -1 | awk '{print $2}')
+          echo "Current image: $CURRENT_IMAGE"
+          
+          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+          
+          if [ -n "$LATEST_VERSION" ]; then
+            # 检查当前镜像是否包含最新版本
+            if [[ "$CURRENT_IMAGE" != *"$LATEST_VERSION"* ]]; then
+              echo "update_needed=true" >> $GITHUB_OUTPUT
+              echo "New version available: $LATEST_VERSION"
+            else
+              echo "update_needed=false" >> $GITHUB_OUTPUT
+              echo "Already on latest version"
+            fi
+          else
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+            echo "Could not determine latest version"
+          fi
+
+      - name: Install lzc-cli
+        if: steps.check-update.outputs.update_needed == 'true'
+        run: |
+          # 下载并安装 lzc-cli
+          curl -fsSL https://github.com/linuxsuren/lzc-cli/releases/latest/download/lzc-cli-linux-amd64 -o lzc-cli
+          chmod +x lzc-cli
+          sudo mv lzc-cli /usr/local/bin/
+
+      - name: Copy image and get accelerated URL
+        if: steps.check-update.outputs.update_needed == 'true'
+        id: copy-image
+        env:
+          LZC_TOKEN: ${{ secrets.LZC_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+          SOURCE_IMAGE="ghcr.io/moltis-org/moltis:$LATEST_VERSION"
+          
+          echo "Copying image: $SOURCE_IMAGE"
+          
+          # 使用 lzc-cli 复制镜像
+          ACCELERATED_URL=$(lzc-cli appstore copy-image "$SOURCE_IMAGE" 2>&1 | grep -oP 'registry\.lazycat\.cloud/[^\s]+' || echo "")
+          
+          if [ -z "$ACCELERATED_URL" ]; then
+            echo "Failed to get accelerated URL"
+            exit 1
+          fi
+          
+          echo "accelerated_url=$ACCELERATED_URL" >> $GITHUB_OUTPUT
+          echo "Accelerated URL: $ACCELERATED_URL"
+
+      - name: Update manifest
+        if: steps.check-update.outputs.update_needed == 'true'
+        run: |
+          ACCELERATED_URL="${{ steps.copy-image.outputs.accelerated_url }}"
+          
+          # 更新 lzc-manifest.yml 中的镜像地址
+          sed -i "s|image:.*|image: $ACCELERATED_URL|g" lzc-manifest.yml
+          
+          # 更新版本号（基于日期）
+          NEW_VERSION="0.9.$(date +%Y%m%d%H%M)"
+          sed -i "s/^version:.*/version: $NEW_VERSION/g" lzc-manifest.yml
+          
+          echo "Updated to version: $NEW_VERSION"
+          echo "Updated image: $ACCELERATED_URL"
+
+      - name: Build and publish
+        if: steps.check-update.outputs.update_needed == 'true'
+        env:
+          LZC_TOKEN: ${{ secrets.LZC_TOKEN }}
+        run: |
+          # 构建新版本
+          lzc-cli appstore build
+          
+          # 发布
+          lzc-cli appstore publish
+
+      - name: Commit and push changes
+        if: steps.check-update.outputs.update_needed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add lzc-manifest.yml
+          git commit -m "Update Moltis image to latest version"
+          git push
