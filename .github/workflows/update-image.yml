@@ -144,12 +144,14 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           
+          # 创建 changelog 文件
+          echo "Auto update to Moltis $LATEST_VERSION" > /tmp/changelog_en.txt
+          echo "自动更新到 Moltis $LATEST_VERSION" > /tmp/changelog_zh.txt
+          
           # 发布到应用商店，带中英文 changelog
           lzc-cli appstore publish moltis.lpk \
-            -c "Auto update to Moltis $LATEST_VERSION" \
-            --clang en \
-            -c "自动更新到 Moltis $LATEST_VERSION" \
-            --clang zh
+            --clangs="en:/tmp/changelog_en.txt" \
+            --clangs="zh:/tmp/changelog_zh.txt"
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
@@ -167,12 +169,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           
           # 配置 SSH 使用 443 端口
-          cat >> ~/.ssh/config << 'EOF'
+          cat >> ~/.ssh/config << 'SSHEOF'
           Host github.com
               Hostname ssh.github.com
               Port 443
               User git
-          EOF
+          SSHEOF
           
           # 修改 remote 为 SSH 并推送
           git remote set-url origin git@github.com:CodeEagle/Moltis.git
