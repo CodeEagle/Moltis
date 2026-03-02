@@ -91,7 +91,7 @@ jobs:
           echo "Looking for existing image: $SOURCE_IMAGE"
           
           # 检查 my-images 中是否已存在该镜像
-          EXISTING_IMAGE=$(lzc-cli appstore my-images 2>&1 | grep "$SOURCE_IMAGE" | grep -oP 'registry\.lazycat\.cloud/[^\s'\''"]+' | head -1 || echo "")
+          EXISTING_IMAGE=$(lzc-cli appstore my-images 2>&1 | grep "$SOURCE_IMAGE" | grep -oE 'registry\.lazycat\.cloud/[a-zA-Z0-9_/.:-]+' | head -1 || echo "")
           
           if [ -n "$EXISTING_IMAGE" ]; then
             echo "Found existing accelerated image: $EXISTING_IMAGE"
@@ -103,7 +103,7 @@ jobs:
             COPY_OUTPUT=$(lzc-cli appstore copy-image "$SOURCE_IMAGE" 2>&1)
             echo "$COPY_OUTPUT"
             
-            ACCELERATED_URL=$(echo "$COPY_OUTPUT" | grep -oP 'registry\.lazycat\.cloud/[^\s]+' || echo "")
+            ACCELERATED_URL=$(echo "$COPY_OUTPUT" | grep -oE 'registry\.lazycat\.cloud/[a-zA-Z0-9_/.:-]+' | head -1 || echo "")
             
             if [ -z "$ACCELERATED_URL" ]; then
               echo "Failed to get accelerated URL"
@@ -143,15 +143,23 @@ jobs:
           LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+          lzc-cli appstore publish moltis.lpk --clang en -c "Auto update to Moltis $LATEST_VERSION"
+
+      - name: Create GitHub Release
+        if: steps.check-update.outputs.update_needed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           
-          # 创建 changelog 文件
-          echo "Auto update to Moltis $LATEST_VERSION" > /tmp/changelog_en.txt
-          echo "自动更新到 Moltis $LATEST_VERSION" > /tmp/changelog_zh.txt
+          # 创建 changelog 文件用于 release notes
+          echo "Auto update to Moltis $LATEST_VERSION" > /tmp/changelog.txt
           
-          # 发布到应用商店，带中英文 changelog
-          lzc-cli appstore publish moltis.lpk \
-            --clangs="en:/tmp/changelog_en.txt" \
-            --clangs="zh:/tmp/changelog_zh.txt"
+          # 创建 release 并上传制品
+          gh release create "v$LATEST_VERSION" \
+            --title "Moltis v$LATEST_VERSION" \
+            --notes-file /tmp/changelog.txt \
+            moltis.lpk
 
       - name: Commit and push changes
         if: steps.check-update.outputs.update_needed == 'true'
