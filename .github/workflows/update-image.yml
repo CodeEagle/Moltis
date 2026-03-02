@@ -5,13 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       force_build:
-        description: 'Force build even if no new version'
+        description: "Force build even if no new version"
         required: false
-        default: 'false'
+        default: false
         type: boolean
   # 定时检查，每6小时一次
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: "0 */6 * * *"
 
 jobs:
   check-and-update:
@@ -27,15 +27,15 @@ jobs:
         run: |
           # 从 GitHub releases 获取最新版本号（semantic version 格式）
           LATEST_VERSION=$(gh api repos/moltis-org/moltis/releases/latest --jq '.tag_name' 2>/dev/null || echo "")
-          
+
           if [ -z "$LATEST_VERSION" ]; then
             echo "No release found"
             exit 1
           fi
-          
+
           # 去掉 v 前缀（容器镜像 tag 没有 v 前缀）
           LATEST_VERSION=${LATEST_VERSION#v}
-          
+
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           echo "Latest version found: $LATEST_VERSION"
 
@@ -46,12 +46,12 @@ jobs:
         run: |
           CURRENT_IMAGE=$(grep 'image:' lzc-manifest.yml | head -1 | awk '{print $2}')
           echo "Current image: $CURRENT_IMAGE"
-          
+
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           FORCE_BUILD="${{ inputs.force_build }}"
-          
+
           echo "Force build: $FORCE_BUILD"
-          
+
           if [ "$FORCE_BUILD" = "true" ]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
             echo "Force build requested"
@@ -73,7 +73,7 @@ jobs:
         if: steps.check-update.outputs.update_needed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install lzc-cli
         if: steps.check-update.outputs.update_needed == 'true'
@@ -87,12 +87,12 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
           SOURCE_IMAGE="ghcr.io/moltis-org/moltis:$LATEST_VERSION"
-          
+
           echo "Looking for existing image: $SOURCE_IMAGE"
-          
+
           # 检查 my-images 中是否已存在该镜像
           EXISTING_IMAGE=$(lzc-cli appstore my-images 2>&1 | grep "$SOURCE_IMAGE" | grep -oE 'registry\.lazycat\.cloud/[a-zA-Z0-9_/.:-]+' | head -1 || echo "")
-          
+
           if [ -n "$EXISTING_IMAGE" ]; then
             echo "Found existing accelerated image: $EXISTING_IMAGE"
             echo "accelerated_url=$EXISTING_IMAGE" >> $GITHUB_OUTPUT
@@ -119,13 +119,13 @@ jobs:
         run: |
           ACCELERATED_URL="${{ steps.copy-image.outputs.accelerated_url }}"
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
-          
+
           # 更新 lzc-manifest.yml 中的镜像地址
           sed -i "s|image:.*|image: $ACCELERATED_URL|g" lzc-manifest.yml
-          
+
           # 使用 release tag 的版本号
           sed -i "s/^version:.*/version: $LATEST_VERSION/g" lzc-manifest.yml
-          
+
           echo "Updated to version: $LATEST_VERSION"
           echo "Updated image: $ACCELERATED_URL"
 
@@ -151,10 +151,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
-          
+
           # 创建 changelog 文件用于 release notes
           echo "Auto update to Moltis $LATEST_VERSION" > /tmp/changelog.txt
-          
+
           # 创建 release 并上传制品
           gh release create "v$LATEST_VERSION" \
             --title "Moltis v$LATEST_VERSION" \
@@ -170,12 +170,12 @@ jobs:
           git config --local user.name "GitHub Action"
           git add lzc-manifest.yml
           git commit -m "Update Moltis to version ${{ steps.get-version.outputs.latest_version }}"
-          
+
           # 设置 SSH key
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          
+
           # 配置 SSH 使用 443 端口并添加 host key
           cat >> ~/.ssh/config << 'SSHEOF'
           Host github.com
@@ -184,7 +184,7 @@ jobs:
               User git
               StrictHostKeyChecking no
           SSHEOF
-          
+
           # 修改 remote 为 SSH 并推送
           git remote set-url origin git@github.com:CodeEagle/Moltis.git
           git push
