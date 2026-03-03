@@ -5,13 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       force_build:
-        description: 'Force build even if no new version'
+        description: "Force build even if no new version"
         required: false
         default: false
         type: boolean
   # 定时检查，每6小时一次
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: "0 */6 * * *"
 
 # ==================== 配置区域 ====================
 # 以下变量需要根据项目实际情况修改
@@ -80,7 +80,7 @@ jobs:
         if: steps.check-update.outputs.update_needed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install lzc-cli
         if: steps.check-update.outputs.update_needed == 'true'
@@ -194,13 +194,13 @@ jobs:
         run: |
           lzc-cli project build -o ${{ env.PROJECT_NAME_LOWER }}.lpk
 
-      - name: Publish to appstore
-        if: steps.check-update.outputs.update_needed == 'true'
-        env:
-          LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
-        run: |
-          LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
-          lzc-cli appstore publish ${{ env.PROJECT_NAME_LOWER }}.lpk --clang en -c "Auto update to ${{ env.PROJECT_NAME }} $LATEST_VERSION"
+      # - name: Publish to appstore
+      #   if: steps.check-update.outputs.update_needed == 'true'
+      #   env:
+      #     LZC_CLI_TOKEN: ${{ secrets.LZC_CLI_TOKEN }}
+      #   run: |
+      #     LATEST_VERSION="${{ steps.get-version.outputs.latest_version }}"
+      #     lzc-cli appstore publish ${{ env.PROJECT_NAME_LOWER }}.lpk --clang en -c "Auto update to ${{ env.PROJECT_NAME }} $LATEST_VERSION"
 
       - name: Create GitHub Release
         if: steps.check-update.outputs.update_needed == 'true'
