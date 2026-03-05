@@ -16,7 +16,7 @@ application:
       backend: http://moltis:13131/
 services:
   moltis:
-    image: registry.lazycat.cloud/v2/invokerlaw/moltis-org/moltis/blobs/uploads/ebd5bf2b-e668-46d9-9168-da836c114b85
+    image: registry.lazycat.cloud/invokerlaw/moltis-org/moltis:85d78bdecfc8d4bd
     environment:
       - MOLTIS_NO_TLS=true
       - MOLTIS_BEHIND_PROXY=true
