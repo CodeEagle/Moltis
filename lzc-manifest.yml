@@ -1,6 +1,6 @@
 lzc-sdk-version: '0.1'
 package: com.selfstudio.moltis
-version: 20260327.05
+version: 20260328.01
 min_os_version: 1.3.8
 name: Moltis
 description: (LazyCat Auto-build) A security-first AI assistant - sandboxed execution, passkeys, MCP & hybrid memory
@@ -16,7 +16,7 @@ application:
       backend: http://moltis:13131/
 services:
   moltis:
-    image: registry.lazycat.cloud/invokerlaw/moltis-org/moltis:b83d66dacdbd437a
+    image: registry.lazycat.cloud/invokerlaw/moltis-org/moltis:18563b7d544c95d6
     environment:
       - MOLTIS_NO_TLS=true
       - MOLTIS_BEHIND_PROXY=true
